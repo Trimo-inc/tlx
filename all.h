@@ -12,7 +12,7 @@ BOOL WINAPI DllMain(HMODULE hmod, DWORD re_to_call, LPVOID reserved);
 
 const unsigned short max_lenght = 528;
 /*
-@brief Читает построчно файл, заканчивающийся на '\n' <-> '\r' <-> '\n\r' <-> '\r\n'
+@brief Читает построчно файл, заканчивающийся на '\\n' <-> '\r' <-> '\\n\r' <-> '\r\\n'
 @brief Он читает max_lenght символов, пока не встретит конец строки
 @brief Если файл в одну строку, то после max_lenght читает, пока не встретит ";"
 */

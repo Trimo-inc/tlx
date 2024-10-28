@@ -2,6 +2,19 @@
 #define __STATIC_TLX
 #include "Lexer/Lexer.h"
 namespace tlx {
+	enum Errors : char {
+		PREPROCESSOR,
+		LEXER,
+		PARSER, // Syntax
+		SEGMENT,
+	};
+	struct Error {
+		tlx::Errors type;
+		std::size_t code;
+		char* message = NULL;
+		~Error(void);
+	};
+
 	static const char* operators[]
 	{
 		"+", "-", "*", "\\",

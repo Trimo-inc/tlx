@@ -5,94 +5,10 @@
 
 #include <string>
 
-#ifdef NULL
-#undef NULL
-#endif
-
+#include "./Tokens.h"
 
 namespace tlx {
-	enum Types : char {
-		// Keywords
-		BLOCK_START, // {$
-		BLOCK_END,	 // $}
-		END,
-		IF,
-		THEN,
-		ELSE,
-		WHILE,
-		BREAK,
-		CONTINUE,
-		FUNC,
-		RETURN,
-		FOR,
-#ifdef IN
-#undef IN
-#endif
-		IN,
-		IS,
-		// Keyword types
-#ifdef TRUE
-#undef TRUE
-#endif
-		TRUE,
-#ifdef FALSE
-#undef FALSE
-#endif
-		FALSE,
-		NULL,
-		STATIC,
-		SIZEOF,
-#ifdef CONST
-#undef CONST
-#endif
-		CONST,
-#ifndef CONST
-#define CONST const
-#endif
-		NAME, // example: 'variable = 9;' -> NAME is "variable"
-		// Math operators
-		PLUS,		// '+'
-		MINUS,		// '-'
-		ASTERISK,	// '*'
-		SLASH,		// '\'
-		BACK_SLASH, // '/'
-		PERCENT,	// '%'
-		INCREMENT, // '++'
-		DECREMENT, // '--'
-		NOT, // 'not' || '!'
-		AND, // 'and' || '&&'
-		OR,  // 'or'  || '||'
-		// Programming operators and math 
-		EQUAL, // '=='
-		N_EQUAL, // '!='
-		LT, // '<'
-		GT, // '>'
-		LE, // '<='
-		GE, // '>='
-		// Bitwise
-		B_NOT, // '~'
-		B_AND, // '&'
-		B_OR,  // '|'
-		B_XOR, // '^'
-		B_LSHIFT, // '<<'
-		B_RSHIFT, // '>>'
-		// Assignments
-		ASSIGN, // '='
-		ADD_ASSIGN, // '+='
-		SUB_ASSIGN, // '-='
-		MULT_ASSIGN,// '*='
-		DIV_ASSIGN, // '/='
-		// Special symbols
-		POINT, // '.'
-		COMMA, // ','
-		SEMICOLON, // ';'
-		// SPECIAL
-		UNKNOWN,
-		UNDEFINED, // Type is 'UNDEFINED'
-		// EOF for buffer
-		EOF_
-	};
-#define NULL 0
+
 	struct Token {
 		tlx::Types type;
 		char* value; 
