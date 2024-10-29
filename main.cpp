@@ -55,6 +55,12 @@ extern "C" EXPORT char* get_F(const char* filename)
 	return result;
 }
 
+bool isspace(const char s)
+{
+	return (s == ' ' || s == '\t' || s == '\n' || s == '\r');
+}
+
+
 
 
 #ifdef TEST

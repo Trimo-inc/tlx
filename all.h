@@ -24,6 +24,7 @@ extern "C" EXPORT char* get_F(const char* filename);
 #define FALSE 0
 #define IN
 
+bool isspace(const char s);
 
 #ifdef TEST
 int WINAPI WinMain(

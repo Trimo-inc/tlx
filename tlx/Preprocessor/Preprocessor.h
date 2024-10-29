@@ -17,6 +17,7 @@ namespace tlx {
 			OPEN_IN,
 			NOT_OPEN_FILE,
 			NOT_FOUND_FILE,
+			SYNTAX,
 			RECURSION_LIMIT
 		};
 		class Preprocessor {
@@ -34,6 +35,7 @@ namespace tlx {
 			void writeError(const tlx::frontend::PreErrors& n);
 			void writeError(const tlx::frontend::PreErrors& code, const std::string& data);
 			std::ofstream file_wr; // One file to writen info
+			bool isNotFoundFilename(const std::string& name);
 			
 		};
 	}

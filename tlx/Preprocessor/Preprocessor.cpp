@@ -54,9 +54,41 @@ void tlx::frontend::Preprocessor::recursionIncludes(const std::string& buffer, s
 {
 	std::size_t posi = 0, point = 0; // {$ $};
 	const char dollar = '$';
+	const char include = "include";
+	static const unsigned short limit_reading = 4096;
 	while (posi < buffer.size()) {
 		if (point) { // find constructions
+			if (buffer[posi] == dollar && buffer[posi + 1] == '}') {
+				point--;
+			}
+			else {
+				std::size_t find = buffer.find(include);
+				if (find != std::string::npos) {
+					posi += find + 8; // 8 is lenght word 'include'
+					while ((posi <= buffer.size() && posi < limit_reading) && (isspace(buffer[posi]))) {
+						posi++;
+					}
+					char dk; // if (") else (')
+					if (posi < buffer.size() && (buffer[posi] == '\"' || buffer[posi] == '\'')) {
+						dk = buffer[posi];
+						std::string filename = "";
+						while (posi <= buffer.size() && (buffer[posi] != dk) | ) {
+							filename += buffer[posi++];
+						}
+						if (buffer[posi] != dk) {
+							this->writeError(tlx::frontend::PreErrors::SYNTAX, "Expected " + dk + " symbol");
+							return;
+						} posi++;
+						if (this->isNotFoundFilename(filename)) {
 
+						} 
+
+					}
+					else {
+						this->writeError(tlx::frontend::PreErrors::SYNTAX);
+					}
+				}
+			}
 		}
 		else {
 			std::size_t posi2 = posi + 2;
@@ -67,8 +99,8 @@ void tlx::frontend::Preprocessor::recursionIncludes(const std::string& buffer, s
 		}
 		this->file_wr << buffer[posi];
 		posi++;
-		
 	}
+	this->file_wr << buffer[posi];
 }
 
 void tlx::frontend::Preprocessor::writeError(const tlx::frontend::PreErrors& n)
@@ -87,6 +119,10 @@ void tlx::frontend::Preprocessor::writeError(const tlx::frontend::PreErrors& n)
 			msg = "New file for doing not created";
 			break;
 		}
+		case tlx::frontend::SYNTAX: {
+			msg = "Expected \" or \' symbols";
+			break;
+		}
 	}
 	err.message = strdup(msg.c_str());
 	this->errs.push_back(err);
@@ -96,4 +132,17 @@ void tlx::frontend::Preprocessor::writeError(const tlx::frontend::PreErrors& cod
 	struct tlx::Error err{ tlx::Errors::PREPROCESSOR, code, strdup(data.c_str()) };
 	this->errs.push_back(err);
 }
+
+bool tlx::frontend::Preprocessor::isNotFoundFilename(const std::string& name)
+{
+	const char* p_n = name.c_str();
+	std::size_t size = name.size();
+	for (const auto& iter : this->incs) {
+		if (!strncmp(f_n, iter.c_str(), size)) {
+			return false;  // bad!
+		}
+	}
+	return true; // Good!
+}
+
 
