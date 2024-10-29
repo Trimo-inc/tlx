@@ -1,6 +1,9 @@
 #include "./Preprocessor.h"
 #include "../../all.h"
 
+#include <filesystem>
+#include <regex>
+
 tlx::frontend::Preprocessor::Preprocessor(const std::string& filename) : file_wr(filename + ".pre")
 {
 	this->incs.push_back(filename);
@@ -80,7 +83,7 @@ void tlx::frontend::Preprocessor::recursionIncludes(const std::string& buffer, s
 							return;
 						} posi++;
 						if (this->isNotFoundFilename(filename)) {
-
+							findFiles(filename); // Recursion fucntion
 						} 
 
 					}
@@ -143,6 +146,38 @@ bool tlx::frontend::Preprocessor::isNotFoundFilename(const std::string& name)
 		}
 	}
 	return true; // Good!
+}
+
+void tlx::frontend::Preprocessor::findFiles(const std::string& path)
+{
+	using fs = std::filesystem;
+	std::string filename = "";
+	try {
+		if (fs::exists(path)) {
+			if (fs::is_regular_file(path)) {
+				filename = fs::absolute(path);
+				this->process(filename);
+			}
+			else {
+				this->writeError(tlx::frontend::PreErrors::NOT_FOUND_FILE, "File \"" + path + "\" is folder OR is not valid file");
+			}
+			return;
+		}
+		else {
+			std::regex pattern(path);
+			std::string base_directory = fs::path(path).parent_path().string();
+			for (const auto& entry : fs::recursive_directory_iterator(base_directory)) {
+				if (fs::is_regular_file(entry.status())) {
+					filename = entry.path().filename().string();
+					if (std::regex_match(filename, pattern))
+						this->process(filename);
+				}
+			}
+		}
+	}
+	catch (const fs::filesystem_error& er) {
+		this->writeError(tlx::frontend::PreErrors::FILESYSTEM, er.what());
+	}
 }
 
 
