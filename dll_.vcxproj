@@ -131,13 +131,17 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tlx\Lexer\Lexer.cpp" />
     <ClCompile Include="tlx\Parser\Parser.cpp" />
+    <ClCompile Include="tlx\Preprocessor\Preprocessor.cpp" />
+    <ClCompile Include="tlx\static.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="all.h" />
     <ClInclude Include="tlx\Lexer\Lexer.h" />
+    <ClInclude Include="tlx\Lexer\Tokens.h" />
     <ClInclude Include="tlx\Parser\AST\ast.h" />
     <ClInclude Include="tlx\Parser\AST\Expressions\expr.h" />
     <ClInclude Include="tlx\Parser\Parser.h" />
+    <ClInclude Include="tlx\Preprocessor\Preprocessor.h" />
     <ClInclude Include="tlx\static.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
