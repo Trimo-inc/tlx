@@ -1,4 +1,4 @@
-#include "all.h"
+﻿#include "all.h"
 #include <fstream>
 BOOL WINAPI DllMain(HMODULE hmod, DWORD re_to_call, LPVOID reserved)
 {

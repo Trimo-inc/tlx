@@ -1,8 +1,8 @@
-#include "./Preprocessor.h"
+﻿#include "./Preprocessor.h"
 #include "../../all.h"
 
-#include <filesystem>
 #include <regex>
+
 
 tlx::frontend::Preprocessor::Preprocessor(const std::string& filename) : file_wr(filename + ".pre")
 {
@@ -10,7 +10,6 @@ tlx::frontend::Preprocessor::Preprocessor(const std::string& filename) : file_wr
 }
 tlx::frontend::Preprocessor::~Preprocessor(void)
 {
-	this->defines.clear();
 	this->errs.clear()	 ;
 	this->incs.clear()	 ;
 }
@@ -24,14 +23,18 @@ std::string tlx::frontend::Preprocessor::process(void)
 		this->writeError(tlx::frontend::OPEN_OUT);
 		return line;
 	}
-	
 	if (!this->file_wr.is_open()) {
 		this->writeError(tlx::frontend::OPEN_IN);
 		return line;
 	}
+	std::size_t point = 0;
 	while (!reading.eof()) {
-		readLine(line, reading);
-		this->recursionIncludes(line, reading);
+		const auto pry = this->read(point, reading);
+		if (!reading.good()) {
+			std::string msg = "The file reached its end before it found the keyword \"" + tlx::frontend::Property_toString(pry) + "\"";
+			this->writeError(tlx::frontend::PreErrors::EOF_OFFSET, msg);
+		}
+		this->recursionIncludes(pry, reading);
 	}
 	reading.close();
 	this->file_wr.close();
@@ -47,17 +50,44 @@ void tlx::frontend::Preprocessor::process(const std::string& filename)
 	}
 	std::string buffer = "";
 	while (!file_read.eof()) {
-		readLine(buffer, file_read);
+		
 		this->recursionIncludes(buffer, file_read);
 	}
 
+}
+
+void tlx::frontend::Preprocessor::recursionIncludes(const tlx::frontend::Property& prop, std::ifstream& file_rd)
+{
+	char r, dk;
+	std::string buffer = "";
+	char count_endl = 0; // It're "\\n" | "\r"
+	const char q = '\'', dq = '\"';
+	switch (prop)
+	{
+		case tlx::frontend::Property::INCLUDE: {
+			while (file_rd.get(r)) {
+				buffer += r;
+				if (r != ' ') {
+
+				}
+				if (r == q || r == dq) {
+					dk = q;
+				}
+			}
+			break;
+		}
+		case tlx::frontend::Property::RULE: {
+
+			break;
+		}
+	}
 }
 
 void tlx::frontend::Preprocessor::recursionIncludes(const std::string& buffer, std::ifstream& file_rd)
 {
 	std::size_t posi = 0, point = 0; // {$ $};
 	const char dollar = '$';
-	const char include = "include";
+	const char* include = "include";
 	static const unsigned short limit_reading = 4096;
 	while (posi < buffer.size()) {
 		if (point) { // find constructions
@@ -75,11 +105,12 @@ void tlx::frontend::Preprocessor::recursionIncludes(const std::string& buffer, s
 					if (posi < buffer.size() && (buffer[posi] == '\"' || buffer[posi] == '\'')) {
 						dk = buffer[posi];
 						std::string filename = "";
-						while (posi <= buffer.size() && (buffer[posi] != dk) | ) {
+						while (posi <= buffer.size() && (buffer[posi] != dk) ) {
 							filename += buffer[posi++];
 						}
 						if (buffer[posi] != dk) {
-							this->writeError(tlx::frontend::PreErrors::SYNTAX, "Expected " + dk + " symbol");
+							std::string dk_str = dk + "";
+							this->writeError(tlx::frontend::PreErrors::SYNTAX, "Expected " + dk_str + " symbol");
 							return;
 						} posi++;
 						if (this->isNotFoundFilename(filename)) {
@@ -105,6 +136,53 @@ void tlx::frontend::Preprocessor::recursionIncludes(const std::string& buffer, s
 	}
 	this->file_wr << buffer[posi];
 }
+
+tlx::frontend::Property tlx::frontend::Preprocessor::read(std::size_t& point, std::ifstream& file_rd)
+{
+	std::size_t pos = 0;
+	tlx::frontend::Property _property{ tlx::frontend::Property::RULE }; // magic constants // Чтобы убрать лишний break;
+	const char* include = "include", *rule = "rule";
+	char r, offset_ptr_file = 4; // is lenght string - 'rule' (AND optimization to 3 if (in while))
+	std::string buffer = "";
+	while (file_rd.get(r)) 
+	/* Перемещает указатель файла вперёд, так что файл не стоит на месте */
+	{
+		buffer += r;
+		if (point) { // reading 'include' & 'rule' | '{$' | '$}'
+			this->begin0Rend(buffer, point, pos);
+			if (buffer.find(include) != std::string::npos) {
+				_property = tlx::frontend::Property::INCLUDE; 
+				offset_ptr_file = 8; // 8 is lenght string - 'include'
+				break;
+			}
+			else
+				if (buffer.find(rule) != std::string::npos) 
+					break;
+				
+		}
+		else {
+			// reading '{$'
+			this->begin0Rend(buffer, point, pos);
+		}
+		this->file_wr << r;
+	}
+	file_rd.seekg(offset_ptr_file, std::ios::cur);
+	return _property;
+}
+
+void tlx::frontend::Preprocessor::begin0Rend(const std::string& buffer, std::size_t& point, std::size_t& posix)
+{
+	const char max_lenght = 3, dollar = '$';
+	if (posix >= max_lenght) {
+		const std::size_t posix1 = posix + 1;
+		if (buffer[posix] == '{' && buffer[posix1] == dollar && buffer[posix1 + 1] != dollar)
+			point++;
+		else
+			if (point && (buffer[posix] == dollar && buffer[posix1] == '}'))
+				point--;
+	}
+}
+
 
 void tlx::frontend::Preprocessor::writeError(const tlx::frontend::PreErrors& n)
 {
@@ -141,43 +219,25 @@ bool tlx::frontend::Preprocessor::isNotFoundFilename(const std::string& name)
 	const char* p_n = name.c_str();
 	std::size_t size = name.size();
 	for (const auto& iter : this->incs) {
-		if (!strncmp(f_n, iter.c_str(), size)) {
+		if (!strncmp(p_n, iter.c_str(), size)) {
 			return false;  // bad!
 		}
 	}
 	return true; // Good!
 }
 
-void tlx::frontend::Preprocessor::findFiles(const std::string& path)
+std::string tlx::frontend::Property_toString(const tlx::frontend::Property& pr)
 {
-	using fs = std::filesystem;
-	std::string filename = "";
-	try {
-		if (fs::exists(path)) {
-			if (fs::is_regular_file(path)) {
-				filename = fs::absolute(path);
-				this->process(filename);
-			}
-			else {
-				this->writeError(tlx::frontend::PreErrors::NOT_FOUND_FILE, "File \"" + path + "\" is folder OR is not valid file");
-			}
-			return;
+	std::string ret = "";
+	switch (pr)
+	{
+		case tlx::frontend::Property::INCLUDE: {
+			ret = "include";
+			break;
 		}
-		else {
-			std::regex pattern(path);
-			std::string base_directory = fs::path(path).parent_path().string();
-			for (const auto& entry : fs::recursive_directory_iterator(base_directory)) {
-				if (fs::is_regular_file(entry.status())) {
-					filename = entry.path().filename().string();
-					if (std::regex_match(filename, pattern))
-						this->process(filename);
-				}
-			}
+		case tlx::frontend::Property::RULE: {
+			ret = "rule";
+			break;
 		}
-	}
-	catch (const fs::filesystem_error& er) {
-		this->writeError(tlx::frontend::PreErrors::FILESYSTEM, er.what());
 	}
 }
-
-

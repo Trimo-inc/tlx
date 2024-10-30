@@ -1,4 +1,4 @@
-#ifndef __PARSER__TLX
+﻿#ifndef __PARSER__TLX
 #define __PARSER__TLX
 #include "../Lexer/Lexer.h"
 #include <fstream>

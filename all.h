@@ -1,4 +1,4 @@
-#ifndef __ALL__DLL
+п»ї#ifndef __ALL__DLL
 #include <Windows.h>
 #include <TlHelp32.h>
 #define __ALL__DLL
@@ -12,9 +12,9 @@ BOOL WINAPI DllMain(HMODULE hmod, DWORD re_to_call, LPVOID reserved);
 
 const unsigned short max_lenght = 528;
 /*
-@brief Читает построчно файл, заканчивающийся на '\\n' <-> '\r' <-> '\\n\r' <-> '\r\\n'
-@brief Он читает max_lenght символов, пока не встретит конец строки
-@brief Если файл в одну строку, то после max_lenght читает, пока не встретит ";"
+@brief Р§РёС‚Р°РµС‚ РїРѕСЃС‚СЂРѕС‡РЅРѕ С„Р°Р№Р», Р·Р°РєР°РЅС‡РёРІР°СЋС‰РёР№СЃСЏ РЅР° '\\n' <-> '\r' <-> '\\n\r' <-> '\r\\n'
+@brief РћРЅ С‡РёС‚Р°РµС‚ max_lenght СЃРёРјРІРѕР»РѕРІ, РїРѕРєР° РЅРµ РІСЃС‚СЂРµС‚РёС‚ РєРѕРЅРµС† СЃС‚СЂРѕРєРё
+@brief Р•СЃР»Рё С„Р°Р№Р» РІ РѕРґРЅСѓ СЃС‚СЂРѕРєСѓ, С‚Рѕ РїРѕСЃР»Рµ max_lenght С‡РёС‚Р°РµС‚, РїРѕРєР° РЅРµ РІСЃС‚СЂРµС‚РёС‚ ";"
 */
 void readLine(std::string& buff, std::ifstream& file);
 extern "C" EXPORT char* get_F(const char* filename);
