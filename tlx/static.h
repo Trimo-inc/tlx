@@ -8,9 +8,15 @@ namespace tlx {
 		PARSER, // Syntax
 		SEGMENT,
 	};
+	struct Interval {
+		std::size_t pos1;
+		std::size_t pos2;
+	};
 	struct Error {
 		tlx::Errors type;
 		std::size_t code;
+		std::size_t line_n;
+		tlx::Interval interval;
 		char* message = NULL;
 		~Error(void);
 	};
@@ -90,4 +96,11 @@ namespace tlx {
 	constexpr std::size_t size_operators = (sizeof(operators) / sizeof(*operators));
 	constexpr std::size_t size_keywords  = (sizeof(keywords)  / sizeof(*keywords));
 }
+
+namespace tlx
+{
+	static void setPath(const char* fullpath);
+	static std::string fullpath_dir;
+}
+
 #endif

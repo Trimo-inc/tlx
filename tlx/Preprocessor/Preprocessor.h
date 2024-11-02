@@ -9,6 +9,7 @@
 namespace tlx {
 	namespace frontend {
 		enum Property : char {
+			NONE, // if not construction 'include' | 'rule'
 			INCLUDE,
 			RULE
 		};
@@ -38,16 +39,17 @@ namespace tlx {
 			@brief Читает до ключевых слов 'rule' и 'include', записывая всё в файл
 			@return Что прочитал тип rule или include
 			*/
-			tlx::frontend::Property read(std::size_t& point, std::ifstream& file_rd);
+			tlx::frontend::Property read(std::size_t& point, std::ifstream& file_rd, std::size_t& count_line);
 			void begin0Rend(const std::string& buffer, std::size_t& point, std::size_t& posix);
 
 			std::vector<std::string> incs; // one includes file;
 			std::vector<tlx::Error> errs;
 			void writeError(const tlx::frontend::PreErrors& n);
-			void writeError(const tlx::frontend::PreErrors& code, const std::string& data);
+			void writeError(const tlx::frontend::PreErrors& code, const std::size_t line, const tlx::Interval interval, const std::string& data);
 			std::ofstream file_wr; // One file to writen info
 			bool isNotFoundFilename(const std::string& name);
 			void findFiles(const std::string& path);
+			static unsigned short max_limit = 1024;
 		};
 	}
 }

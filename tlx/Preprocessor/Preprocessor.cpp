@@ -19,6 +19,7 @@ std::string tlx::frontend::Preprocessor::process(void)
 	std::string& filename_out = this->incs.at(0);
 	std::string line = "";
 	std::ifstream reading{ filename_out, std::ios::binary };
+	std::size_t line_numeric = 0;
 	if (!reading.is_open()) {
 		this->writeError(tlx::frontend::OPEN_OUT);
 		return line;
@@ -27,12 +28,15 @@ std::string tlx::frontend::Preprocessor::process(void)
 		this->writeError(tlx::frontend::OPEN_IN);
 		return line;
 	}
-	std::size_t point = 0;
+	std::size_t point = 0, line_numeric = 0;
 	while (!reading.eof()) {
-		const auto pry = this->read(point, reading);
+		const auto pry = this->read(point, reading, line_numeric);
+		if (pry == tlx::frontend::Property::NONE)
+			break;
 		if (!reading.good()) {
 			std::string msg = "The file reached its end before it found the keyword \"" + tlx::frontend::Property_toString(pry) + "\"";
 			this->writeError(tlx::frontend::PreErrors::EOF_OFFSET, msg);
+			return line;
 		}
 		this->recursionIncludes(pry, reading);
 	}
@@ -58,21 +62,27 @@ void tlx::frontend::Preprocessor::process(const std::string& filename)
 
 void tlx::frontend::Preprocessor::recursionIncludes(const tlx::frontend::Property& prop, std::ifstream& file_rd)
 {
-	char r, dk;
+	char r, dk = '\0';
 	std::string buffer = "";
 	char count_endl = 0; // It're "\\n" | "\r"
 	const char q = '\'', dq = '\"';
 	switch (prop)
 	{
+		/*
+		Example: include      './main.fn'
+		*/
 		case tlx::frontend::Property::INCLUDE: {
 			while (file_rd.get(r)) {
 				buffer += r;
-				if (r != ' ') {
+				if (!dk && r != ' ') {
+					if (r == q || r == dq) {
+						dk = q;
+					}
+					else {
+						this->writeError(tlx::frontend::PreErrors::SYNTAX, "Expected " + dk + " symbol");
+					}
+				}
 
-				}
-				if (r == q || r == dq) {
-					dk = q;
-				}
 			}
 			break;
 		}
@@ -137,36 +147,45 @@ void tlx::frontend::Preprocessor::recursionIncludes(const std::string& buffer, s
 	this->file_wr << buffer[posi];
 }
 
-tlx::frontend::Property tlx::frontend::Preprocessor::read(std::size_t& point, std::ifstream& file_rd)
+tlx::frontend::Property tlx::frontend::Preprocessor::read(std::size_t& point, std::ifstream& file_rd, std::size_t& count_line)
 {
-	std::size_t pos = 0;
-	tlx::frontend::Property _property{ tlx::frontend::Property::RULE }; // magic constants // Чтобы убрать лишний break;
+	tlx::frontend::Property _property{ tlx::frontend::Property::NONE }; 
 	const char* include = "include", *rule = "rule";
 	char r, offset_ptr_file = 4; // is lenght string - 'rule' (AND optimization to 3 if (in while))
+	std::size_t pos = 0;
 	std::string buffer = "";
+	unsigned short i = 0, ii = 0;
+	
 	while (file_rd.get(r)) 
 	/* Перемещает указатель файла вперёд, так что файл не стоит на месте */
 	{
 		buffer += r;
+		this->begin0Rend(buffer, point, pos);
 		if (point) { // reading 'include' & 'rule' | '{$' | '$}'
-			this->begin0Rend(buffer, point, pos);
+			
 			if (buffer.find(include) != std::string::npos) {
 				_property = tlx::frontend::Property::INCLUDE; 
 				offset_ptr_file = 8; // 8 is lenght string - 'include'
 				break;
 			}
 			else
-				if (buffer.find(rule) != std::string::npos) 
+				if (buffer.find(rule) != std::string::npos) {
+					_property = tlx::frontend::Property::RULE;
 					break;
-				
+				}
 		}
-		else {
-			// reading '{$'
-			this->begin0Rend(buffer, point, pos);
+		if (  ( r == '\n' || r == '\r') || (i >= tlx::frontend::Preprocessor::max_limit && r == ';')  ) 
+		{
+			if (i + 1 != ii)
+				count_line++;
+			ii = i;
+			this->file_wr << buffer;
+			buffer = ""; pos = 0;
 		}
-		this->file_wr << r;
+		i++;
 	}
-	file_rd.seekg(offset_ptr_file, std::ios::cur);
+	if (_property != tlx::frontend::Property::NONE)
+		this->file_wr.write(buffer.c_str(), static_cast<std::streamsize>(buffer.size()) - offset_ptr_file);
 	return _property;
 }
 
@@ -188,7 +207,6 @@ void tlx::frontend::Preprocessor::writeError(const tlx::frontend::PreErrors& n)
 {
 	struct tlx::Error err { tlx::Errors::PREPROCESSOR, n };
 	std::string msg;
-	
 	switch (n)
 	{
 		case tlx::frontend::OPEN_OUT: {
@@ -208,9 +226,9 @@ void tlx::frontend::Preprocessor::writeError(const tlx::frontend::PreErrors& n)
 	err.message = strdup(msg.c_str());
 	this->errs.push_back(err);
 }
-void tlx::frontend::Preprocessor::writeError(const tlx::frontend::PreErrors& code, const std::string& data)
+void tlx::frontend::Preprocessor::writeError(const tlx::frontend::PreErrors& code, const std::size_t line, const tlx::Interval interval, const std::string& data)
 {
-	struct tlx::Error err{ tlx::Errors::PREPROCESSOR, code, strdup(data.c_str()) };
+	struct tlx::Error err {tlx::Errors::PREPROCESSOR, code, line, interval, strdup(data.c_str()) };
 	this->errs.push_back(err);
 }
 
@@ -240,4 +258,5 @@ std::string tlx::frontend::Property_toString(const tlx::frontend::Property& pr)
 			break;
 		}
 	}
+	return ret;
 }
